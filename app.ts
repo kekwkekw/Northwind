@@ -38,6 +38,19 @@ routes.forEach(({ path, tableName }) => {
     app.get(path, createRouteHandler(tableName));
 });
 
+const pingRandomRoute = () => {
+    const randomIndex = Math.floor(Math.random() * routes.length);
+    const randomRoute = routes[randomIndex].path;
+    console.log(`Pinging route: ${randomRoute}`);
+    fetch(`http://localhost:${PORT}${randomRoute}?limit=1`)
+        .then(response => response.json())
+        .then(data => console.log('Ping response:', data))
+        .catch(error => console.error('Error pinging route:', error));
+};
+
+const pingInterval = Math.floor(Math.random() * (180000 - 120000)) + 120000;
+setInterval(pingRandomRoute, pingInterval);
+
 app.listen(PORT, () => {
     console.log(`Server is running on port ${PORT}`);
 });
