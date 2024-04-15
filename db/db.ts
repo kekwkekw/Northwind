@@ -11,7 +11,6 @@ const db = new Database(dbFilePath);
 
 const createTables = () => {
     console.log('Creating tables...');
-    console.log('Init query:', initQuery);
     db.exec(initQuery, (err: Error | null) => {
         if (err) {
             console.error('Error creating tables:', err);
@@ -59,6 +58,7 @@ const readData = (tableName: string, limit: number = Infinity, offset: number = 
         if (offset > 0) {
             query += ` OFFSET ${offset}`;
         }
+        console.log('Reading data:', query)
 
         db.all(query, (err : Error | null, rows : any[] = []) => {
             if (err) {
@@ -74,7 +74,6 @@ const readData = (tableName: string, limit: number = Infinity, offset: number = 
 
 
 const insertDataFromFile = (tableName: string, fileName: string) => {
-    console.log(`Inserting data from file ${fileName} to table ${tableName}...`);
     const filePath = path.join(rawDataFolder, fileName);
     const data: any[] = [];
     fs.createReadStream(filePath)

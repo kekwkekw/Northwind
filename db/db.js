@@ -38,7 +38,6 @@ const dbFilePath = path.join(projectFolder, 'northwind.db');
 const db = new sqlite3_1.Database(dbFilePath);
 const createTables = () => {
     console.log('Creating tables...');
-    console.log('Init query:', queries_1.initQuery);
     db.exec(queries_1.initQuery, (err) => {
         if (err) {
             console.error('Error creating tables:', err);
@@ -82,6 +81,7 @@ const readData = (tableName, limit = Infinity, offset = 0, whereKey = '', whereL
         if (offset > 0) {
             query += ` OFFSET ${offset}`;
         }
+        console.log('Reading data:', query);
         db.all(query, (err, rows = []) => {
             if (err) {
                 console.error('Error reading data:', err);
@@ -95,7 +95,6 @@ const readData = (tableName, limit = Infinity, offset = 0, whereKey = '', whereL
 };
 exports.readData = readData;
 const insertDataFromFile = (tableName, fileName) => {
-    console.log(`Inserting data from file ${fileName} to table ${tableName}...`);
     const filePath = path.join(rawDataFolder, fileName);
     const data = [];
     fs.createReadStream(filePath)
