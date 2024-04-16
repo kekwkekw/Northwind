@@ -26,7 +26,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.clearData = exports.readData = exports.initDatabase = void 0;
+exports.countRows = exports.insertData = exports.clearData = exports.readData = exports.initDatabase = void 0;
 const fs = __importStar(require("fs"));
 const path = __importStar(require("path"));
 const csv_parser_1 = __importDefault(require("csv-parser"));
@@ -58,6 +58,7 @@ const insertData = (tableName, data) => {
         }
     });
 };
+exports.insertData = insertData;
 const clearData = (tableName) => {
     db.run(`DELETE FROM ${tableName}`, (err) => {
         if (err) {
@@ -71,7 +72,7 @@ const clearData = (tableName) => {
 exports.clearData = clearData;
 const readData = (tableName, limit = Infinity, offset = 0, whereKey = '', whereLike = '') => {
     return new Promise((resolve, reject) => {
-        let query = `SELECT * FROM ${tableName}`;
+        let query = queries_1.getQueries.hasOwnProperty(tableName) ? queries_1.getQueries[tableName] : `SELECT * FROM ${tableName}`;
         if (whereKey && whereLike) {
             query += ` WHERE ${whereKey} LIKE '%${whereLike}%'`;
         }
@@ -82,6 +83,7 @@ const readData = (tableName, limit = Infinity, offset = 0, whereKey = '', whereL
             query += ` OFFSET ${offset}`;
         }
         console.log('Reading data:', query);
+        insertData('ResponseLogs', { Query: query });
         db.all(query, (err, rows = []) => {
             if (err) {
                 console.error('Error reading data:', err);
@@ -94,6 +96,29 @@ const readData = (tableName, limit = Infinity, offset = 0, whereKey = '', whereL
     });
 };
 exports.readData = readData;
+const countRows = (tableName) => {
+    return new Promise((resolve, reject) => {
+        db.get(`SELECT COUNT(1) AS total FROM ${tableName}`, (err, row) => {
+            if (err) {
+                console.error('Error counting data:', err);
+                reject(err);
+            }
+            else {
+                resolve(row.total);
+            }
+        });
+    });
+};
+exports.countRows = countRows;
+// const testCountData = async (tableName: string) => {
+//     try {
+//         const count = await countData(tableName);
+//         console.log(`Total rows in ${tableName}: ${count}`);
+//     } catch (error) {
+//         console.error(`Error counting data for ${tableName}:`, error);
+//     }
+// };
+// testCountData('Supplies');
 const insertDataFromFile = (tableName, fileName) => {
     const filePath = path.join(rawDataFolder, fileName);
     const data = [];

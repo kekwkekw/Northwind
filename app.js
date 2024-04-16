@@ -15,8 +15,13 @@ const createRouteHandler = (tableName) => {
             const whereKey = req.query.whereKey || '';
             const whereLike = req.query.whereLike || '';
             const outputData = await (0, db_1.readData)(tableName, limit, offset, whereKey, whereLike);
+            let count = await (0, db_1.countRows)(tableName);
+            let output = {
+                count: count,
+                data: outputData
+            };
             console.log('Request with parameters:', `${tableName}, ${limit}, ${offset}, ${whereKey}, ${whereLike}`);
-            res.json(outputData);
+            res.json(output);
         }
         catch (error) {
             console.error('Error:', error);

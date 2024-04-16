@@ -2,7 +2,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import csvParser from 'csv-parser';
 import { Database } from 'sqlite3';
-import { initQuery } from './queries';
+import { initQuery, getQueries } from './queries';
 
 const rawDataFolder = './raw_data';
 const projectFolder = __dirname;
@@ -45,7 +45,8 @@ const clearData = (tableName: string) => {
 
 const readData = (tableName: string, limit: number = Infinity, offset: number = 0, whereKey: string = '', whereLike: string = ''): Promise<any[]> => {
     return new Promise((resolve, reject) => {
-        let query = `SELECT * FROM ${tableName}`;
+        let query = getQueries.hasOwnProperty(tableName) ? getQueries[tableName] : `SELECT * FROM ${tableName}`;
+
 
         if (whereKey && whereLike) {
             query += ` WHERE ${whereKey} LIKE '%${whereLike}%'`;
@@ -59,8 +60,9 @@ const readData = (tableName: string, limit: number = Infinity, offset: number = 
             query += ` OFFSET ${offset}`;
         }
         console.log('Reading data:', query)
+        insertData('ResponseLogs', { Query: query });
 
-        db.all(query, (err : Error | null, rows : any[] = []) => {
+        db.all(query, (err: Error | null, rows: any[] = []) => {
             if (err) {
                 console.error('Error reading data:', err);
                 reject(err);
@@ -70,6 +72,30 @@ const readData = (tableName: string, limit: number = Infinity, offset: number = 
         });
     });
 };
+
+const countRows = (tableName: string): Promise<number> => {
+    return new Promise((resolve, reject) => {
+        db.get(`SELECT COUNT(1) AS total FROM ${tableName}`, (err: Error | null, row: any) => {
+            if (err) {
+                console.error('Error counting data:', err);
+                reject(err);
+            } else {
+                resolve(row.total)
+            }
+        });
+    });
+};
+
+// const testCountData = async (tableName: string) => {
+//     try {
+//         const count = await countData(tableName);
+//         console.log(`Total rows in ${tableName}: ${count}`);
+//     } catch (error) {
+//         console.error(`Error counting data for ${tableName}:`, error);
+//     }
+// };
+
+// testCountData('Supplies');
 
 
 
@@ -104,4 +130,4 @@ const initDatabase = () => {
     insertDataFromFile('EmployeeTerritories', 'EmployeeTerritories.csv');
 };
 
-export { initDatabase, readData, clearData };
+export { initDatabase, readData, clearData, insertData, countRows };

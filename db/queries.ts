@@ -10,6 +10,7 @@ DROP TABLE IF EXISTS "OrderDetails";
 DROP TABLE IF EXISTS "Regions";
 DROP TABLE IF EXISTS "Territories";
 DROP TABLE IF EXISTS "EmployeeTerritories";
+DROP TABLE IF EXISTS "ResponseLogs";
 CREATE TABLE IF NOT EXISTS "Employees" ( "EmployeeID" INTEGER PRIMARY KEY, "LastName" VARCHAR(1000) NULL, "FirstName" VARCHAR(1000) NULL, "Title" VARCHAR(1000) NULL, "TitleOfCourtesy" VARCHAR(1000) NULL, "BirthDate" VARCHAR(1000) NULL, "HireDate" VARCHAR(1000) NULL, "Address" VARCHAR(1000) NULL, "City" VARCHAR(1000) NULL, "Region" VARCHAR(1000) NULL, "PostalCode" VARCHAR(1000) NULL, "Country" VARCHAR(1000) NULL, "HomePhone" VARCHAR(1000) NULL, "Extension" VARCHAR(1000) NULL, "Photo" BLOB NULL, "Notes" VARCHAR(1000) NULL, "ReportsTo" INTEGER NULL);
 CREATE TABLE IF NOT EXISTS "Categories" ( "CategoryID" INTEGER PRIMARY KEY, "CategoryName" VARCHAR(1000) NULL, "Description" VARCHAR(1000) NULL);
 CREATE TABLE IF NOT EXISTS "Customers" ( "CustomerID" VARCHAR(1000) PRIMARY KEY, "CompanyName" VARCHAR(1000) NULL, "ContactName" VARCHAR(1000) NULL, "ContactTitle" VARCHAR(1000) NULL, "Address" VARCHAR(1000) NULL, "City" VARCHAR(1000) NULL, "Region" VARCHAR(1000) NULL, "PostalCode" VARCHAR(1000) NULL, "Country" VARCHAR(1000) NULL, "Phone" VARCHAR(1000) NULL, "Fax" VARCHAR(1000) NULL);
@@ -20,18 +21,39 @@ CREATE TABLE IF NOT EXISTS "Products" ( "ProductID" INTEGER PRIMARY KEY, "Produc
 CREATE TABLE IF NOT EXISTS "OrderDetails" ( "OrderID" VARCHAR(1000), "ProductID" INTEGER NOT NULL, "UnitPrice" DECIMAL NOT NULL, "Quantity" INTEGER NOT NULL, "Discount" DOUBLE NOT NULL);
 CREATE TABLE IF NOT EXISTS "Regions" ( "RegionID" INTEGER PRIMARY KEY, "RegionDescription" VARCHAR(1000) NULL);
 CREATE TABLE IF NOT EXISTS "Territories" ( "TerritoryID" VARCHAR(1000) PRIMARY KEY, "TerritoryDescription" VARCHAR(1000) NULL, "RegionID" INTEGER NOT NULL);
-CREATE TABLE IF NOT EXISTS "EmployeeTerritories" ("EmployeeID" INTEGER NOT NULL, "TerritoryID" VARCHAR(1000) NULL);`;
+CREATE TABLE IF NOT EXISTS "EmployeeTerritories" ("EmployeeID" INTEGER NOT NULL, "TerritoryID" VARCHAR(1000) NULL);
+CREATE TABLE IF NOT EXISTS "ResponseLogs" ("SessionID" INTEGER NOT NULL, "SessionIP" VARCHAR(1000) NULL, "Query" VARCHAR(1000), "RowsReturned" INTEGER DEFAULT 0, "ResponseTime" REAL NULL);`;
 
 let getEmployees = `SELECT * FROM Employees;`;
 let getCategories = `SELECT * FROM Categories;`;
 let getCustomers = `SELECT * FROM Customers;`;
 let getShippers = `SELECT * FROM Shippers;`;
 let getSupplies = `SELECT * FROM Supplies;`;
-let getOrders = `SELECT * FROM Orders;`;
+let getOrders = `SELECT o.OrderID, o.CustomerID, o.EmployeeID, o.OrderDate, o.RequiredDate, o.ShippedDate, o.ShipVia, o.Freight, o.ShipName, o.ShipAddress, o.ShipCity, o.ShipRegion, o.ShipPostalCode, o.ShipCountry, 
+COUNT(DISTINCT(od.ProductID)) AS ProductCount, SUM(od.Quantity) AS TotalQuantity, SUM(od.UnitPrice*od.Quantity) AS TotalPrice
+FROM Orders AS o
+LEFT JOIN OrderDetails AS od ON (o.OrderID = od.OrderID)
+GROUP BY o.OrderID, o.CustomerID, o.EmployeeID, o.OrderDate, o.RequiredDate, o.ShippedDate, o.ShipVia, o.Freight, o.ShipName, o.ShipAddress, o.ShipCity, o.ShipRegion, o.ShipPostalCode, o.ShipCountry
+;`;
 let getProducts = `SELECT * FROM Products;`;
 let getOrderDetails = `SELECT * FROM OrderDetails;`;
 let getRegions = `SELECT * FROM Regions;`;
 let getTerritories = `SELECT * FROM Territories;`;
 let getEmployeeTerritories = `SELECT * FROM EmployeeTerritories;`;
 
-export { initQuery, getEmployees, getCategories, getCustomers, getShippers, getSupplies, getOrders, getProducts, getOrderDetails, getRegions, getTerritories, getEmployeeTerritories };
+let getQueries: {[k: string]: any} = {
+    'Employees': getEmployees,
+    'Categories': getCategories,
+    'Customers': getCustomers,
+    'Shippers': getShippers,
+    'Supplies': getSupplies,
+    'Orders': getOrders,
+    'Products': getProducts,
+    'OrderDetails': getOrderDetails,
+    'Regions': getRegions,
+    'Territories': getTerritories,
+    'EmployeeTerritories': getEmployeeTerritories
+};
+
+
+export { initQuery, getQueries };
