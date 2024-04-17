@@ -22,24 +22,24 @@ CREATE TABLE IF NOT EXISTS "OrderDetails" ( "OrderID" VARCHAR(1000), "ProductID"
 CREATE TABLE IF NOT EXISTS "Regions" ( "RegionID" INTEGER PRIMARY KEY, "RegionDescription" VARCHAR(1000) NULL);
 CREATE TABLE IF NOT EXISTS "Territories" ( "TerritoryID" VARCHAR(1000) PRIMARY KEY, "TerritoryDescription" VARCHAR(1000) NULL, "RegionID" INTEGER NOT NULL);
 CREATE TABLE IF NOT EXISTS "EmployeeTerritories" ("EmployeeID" INTEGER NOT NULL, "TerritoryID" VARCHAR(1000) NULL);
-CREATE TABLE IF NOT EXISTS "ResponseLogs" ("SessionID" INTEGER NOT NULL, "SessionIP" VARCHAR(1000) NULL, "Query" VARCHAR(1000), "RowsReturned" INTEGER DEFAULT 0, "ResponseTime" REAL NULL);`;
+CREATE TABLE IF NOT EXISTS "ResponseLogs" ("SessionID" INTEGER NULL, "SessionIP" VARCHAR(1000) NULL, "queriedAt" DATETIME NULL, "Query" VARCHAR(1000), "RowsReturned" INTEGER DEFAULT 0, "ResponseTime" REAL NULL);`;
 
-let getEmployees = `SELECT * FROM Employees;`;
-let getCategories = `SELECT * FROM Categories;`;
-let getCustomers = `SELECT * FROM Customers;`;
-let getShippers = `SELECT * FROM Shippers;`;
-let getSupplies = `SELECT * FROM Supplies;`;
+let getEmployees = `SELECT * FROM Employees`;
+let getCategories = `SELECT * FROM Categories`;
+let getCustomers = `SELECT * FROM Customers`;
+let getShippers = `SELECT * FROM Shippers`;
+let getSupplies = `SELECT * FROM Supplies`;
 let getOrders = `SELECT o.OrderID, o.CustomerID, o.EmployeeID, o.OrderDate, o.RequiredDate, o.ShippedDate, o.ShipVia, o.Freight, o.ShipName, o.ShipAddress, o.ShipCity, o.ShipRegion, o.ShipPostalCode, o.ShipCountry, 
 COUNT(DISTINCT(od.ProductID)) AS ProductCount, SUM(od.Quantity) AS TotalQuantity, SUM(od.UnitPrice*od.Quantity) AS TotalPrice
 FROM Orders AS o
 LEFT JOIN OrderDetails AS od ON (o.OrderID = od.OrderID)
 GROUP BY o.OrderID, o.CustomerID, o.EmployeeID, o.OrderDate, o.RequiredDate, o.ShippedDate, o.ShipVia, o.Freight, o.ShipName, o.ShipAddress, o.ShipCity, o.ShipRegion, o.ShipPostalCode, o.ShipCountry
-;`;
-let getProducts = `SELECT * FROM Products;`;
-let getOrderDetails = `SELECT * FROM OrderDetails;`;
-let getRegions = `SELECT * FROM Regions;`;
-let getTerritories = `SELECT * FROM Territories;`;
-let getEmployeeTerritories = `SELECT * FROM EmployeeTerritories;`;
+`;
+let getProducts = `SELECT * FROM Products`;
+let getOrderDetails = `SELECT * FROM OrderDetails`;
+let getRegions = `SELECT * FROM Regions`;
+let getTerritories = `SELECT * FROM Territories`;
+let getEmployeeTerritories = `SELECT * FROM EmployeeTerritories`;
 
 let getQueries: {[k: string]: any} = {
     'Employees': getEmployees,
@@ -55,5 +55,18 @@ let getQueries: {[k: string]: any} = {
     'EmployeeTerritories': getEmployeeTerritories
 };
 
+let logQueryStats = `SELECT COUNT(1) AS queryCount,
+SUM(RowsReturned) AS resultCount,
+SUM(CASE WHEN Query LIKE '%SELECT%' THEN 1 ELSE 0 END) AS selectCount,
+SUM(CASE WHEN Query LIKE '%SELECT%' AND Query LIKE '%WHERE%' THEN 1 ELSE 0 END) AS selectWhereCount,
+SUM(CASE WHEN Query LIKE '%SELECT%' AND Query LIKE '%LEFT JOIN%' THEN 1 ELSE 0 END) AS selectLeftJoinCount
+FROM ResponseLogs
+WHERE SessionID = ?
+`;
 
-export { initQuery, getQueries };
+let logQueryHistory = `SELECT queriedAt, Query, ResponseTime
+FROM ResponseLogs
+WHERE SessionID = ?`
+
+
+export { initQuery, getQueries, logQueryStats, logQueryHistory };

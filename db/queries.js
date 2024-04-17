@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.getQueries = exports.initQuery = void 0;
+exports.logQueryHistory = exports.logQueryStats = exports.getQueries = exports.initQuery = void 0;
 let initQuery = `PRAGMA foreign_keys=off;
 DROP TABLE IF EXISTS "Employees";
 DROP TABLE IF EXISTS "Categories";
@@ -25,24 +25,24 @@ CREATE TABLE IF NOT EXISTS "OrderDetails" ( "OrderID" VARCHAR(1000), "ProductID"
 CREATE TABLE IF NOT EXISTS "Regions" ( "RegionID" INTEGER PRIMARY KEY, "RegionDescription" VARCHAR(1000) NULL);
 CREATE TABLE IF NOT EXISTS "Territories" ( "TerritoryID" VARCHAR(1000) PRIMARY KEY, "TerritoryDescription" VARCHAR(1000) NULL, "RegionID" INTEGER NOT NULL);
 CREATE TABLE IF NOT EXISTS "EmployeeTerritories" ("EmployeeID" INTEGER NOT NULL, "TerritoryID" VARCHAR(1000) NULL);
-CREATE TABLE IF NOT EXISTS "ResponseLogs" ("SessionID" INTEGER NOT NULL, "SessionIP" VARCHAR(1000) NULL, "Query" VARCHAR(1000), "RowsReturned" INTEGER DEFAULT 0, "ResponseTime" REAL NULL);`;
+CREATE TABLE IF NOT EXISTS "ResponseLogs" ("SessionID" INTEGER NULL, "SessionIP" VARCHAR(1000) NULL, "queriedAt" DATETIME NULL, "Query" VARCHAR(1000), "RowsReturned" INTEGER DEFAULT 0, "ResponseTime" REAL NULL);`;
 exports.initQuery = initQuery;
-let getEmployees = `SELECT * FROM Employees;`;
-let getCategories = `SELECT * FROM Categories;`;
-let getCustomers = `SELECT * FROM Customers;`;
-let getShippers = `SELECT * FROM Shippers;`;
-let getSupplies = `SELECT * FROM Supplies;`;
+let getEmployees = `SELECT * FROM Employees`;
+let getCategories = `SELECT * FROM Categories`;
+let getCustomers = `SELECT * FROM Customers`;
+let getShippers = `SELECT * FROM Shippers`;
+let getSupplies = `SELECT * FROM Supplies`;
 let getOrders = `SELECT o.OrderID, o.CustomerID, o.EmployeeID, o.OrderDate, o.RequiredDate, o.ShippedDate, o.ShipVia, o.Freight, o.ShipName, o.ShipAddress, o.ShipCity, o.ShipRegion, o.ShipPostalCode, o.ShipCountry, 
 COUNT(DISTINCT(od.ProductID)) AS ProductCount, SUM(od.Quantity) AS TotalQuantity, SUM(od.UnitPrice*od.Quantity) AS TotalPrice
 FROM Orders AS o
 LEFT JOIN OrderDetails AS od ON (o.OrderID = od.OrderID)
 GROUP BY o.OrderID, o.CustomerID, o.EmployeeID, o.OrderDate, o.RequiredDate, o.ShippedDate, o.ShipVia, o.Freight, o.ShipName, o.ShipAddress, o.ShipCity, o.ShipRegion, o.ShipPostalCode, o.ShipCountry
-;`;
-let getProducts = `SELECT * FROM Products;`;
-let getOrderDetails = `SELECT * FROM OrderDetails;`;
-let getRegions = `SELECT * FROM Regions;`;
-let getTerritories = `SELECT * FROM Territories;`;
-let getEmployeeTerritories = `SELECT * FROM EmployeeTerritories;`;
+`;
+let getProducts = `SELECT * FROM Products`;
+let getOrderDetails = `SELECT * FROM OrderDetails`;
+let getRegions = `SELECT * FROM Regions`;
+let getTerritories = `SELECT * FROM Territories`;
+let getEmployeeTerritories = `SELECT * FROM EmployeeTerritories`;
 let getQueries = {
     'Employees': getEmployees,
     'Categories': getCategories,
@@ -57,3 +57,16 @@ let getQueries = {
     'EmployeeTerritories': getEmployeeTerritories
 };
 exports.getQueries = getQueries;
+let logQueryStats = `SELECT COUNT(1) AS queryCount,
+SUM(RowsReturned) AS resultCount,
+SUM(CASE WHEN Query LIKE '%SELECT%' THEN 1 ELSE 0 END) AS selectCount,
+SUM(CASE WHEN Query LIKE '%SELECT%' AND Query LIKE '%WHERE%' THEN 1 ELSE 0 END) AS selectWhereCount,
+SUM(CASE WHEN Query LIKE '%SELECT%' AND Query LIKE '%LEFT JOIN%' THEN 1 ELSE 0 END) AS selectLeftJoinCount
+FROM ResponseLogs
+WHERE SessionID = ?
+`;
+exports.logQueryStats = logQueryStats;
+let logQueryHistory = `SELECT queriedAt, Query, ResponseTime
+FROM ResponseLogs
+WHERE SessionID = ?`;
+exports.logQueryHistory = logQueryHistory;

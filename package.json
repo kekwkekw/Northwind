@@ -13,12 +13,14 @@
   "dependencies": {
     "axios": "^1.6.8",
     "concurrently": "^8.2.2",
+    "cors": "^2.8.5",
     "express": "^4.19.2",
     "mysql2": "^3.9.3",
     "sqlite3": "^5.1.7",
     "timers": "^0.1.1"
   },
   "devDependencies": {
+    "@types/cors": "^2.8.17",
     "@types/express": "",
     "@types/node": "^20.12.7",
     "csv-parser": "^3.0.0",

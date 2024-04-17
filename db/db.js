@@ -26,7 +26,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.countRows = exports.insertData = exports.clearData = exports.readData = exports.initDatabase = void 0;
+exports.responseLogsHistory = exports.responseLogsStats = exports.countRows = exports.insertData = exports.clearData = exports.readData = exports.initDatabase = void 0;
 const fs = __importStar(require("fs"));
 const path = __importStar(require("path"));
 const csv_parser_1 = __importDefault(require("csv-parser"));
@@ -83,14 +83,13 @@ const readData = (tableName, limit = Infinity, offset = 0, whereKey = '', whereL
             query += ` OFFSET ${offset}`;
         }
         console.log('Reading data:', query);
-        insertData('ResponseLogs', { Query: query });
         db.all(query, (err, rows = []) => {
             if (err) {
                 console.error('Error reading data:', err);
                 reject(err);
             }
             else {
-                resolve(rows);
+                resolve({ query: query, result: rows });
             }
         });
     });
@@ -149,3 +148,38 @@ const initDatabase = () => {
     insertDataFromFile('EmployeeTerritories', 'EmployeeTerritories.csv');
 };
 exports.initDatabase = initDatabase;
+const responseLogsStats = (SessionID) => {
+    return new Promise((resolve, reject) => {
+        db.get(queries_1.logQueryStats, [SessionID], (err, row) => {
+            if (err) {
+                console.error('Error reading response logs:', err);
+                reject(err);
+            }
+            else {
+                resolve({
+                    queryCount: row.queryCount,
+                    resultCount: row.resultCount,
+                    selectCount: row.selectCount,
+                    selectWhereCount: row.selectWhereCount,
+                    selectLeftJoinCount: row.selectLeftJoinCount,
+                    queryHistory: row.queryHistory
+                });
+            }
+        });
+    });
+};
+exports.responseLogsStats = responseLogsStats;
+const responseLogsHistory = (SessionID) => {
+    return new Promise((resolve, reject) => {
+        db.all(queries_1.logQueryHistory, [SessionID], (err, rows = []) => {
+            if (err) {
+                console.error('Error reading response logs:', err);
+                reject(err);
+            }
+            else {
+                resolve(rows);
+            }
+        });
+    });
+};
+exports.responseLogsHistory = responseLogsHistory;
