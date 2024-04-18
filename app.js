@@ -6,12 +6,9 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = __importDefault(require("express"));
 const cors_1 = __importDefault(require("cors"));
 const db_1 = require("./db/db");
+const workerDataFuncs_1 = require("./workerDataFuncs");
 const app = (0, express_1.default)();
-app.use((0, cors_1.default)({
-    origin: '*',
-    methods: 'GET',
-    allowedHeaders: ['Content-Type', 'Authorization']
-}));
+app.use((0, cors_1.default)());
 const PORT = process.env.PORT || 3000;
 const createRouteHandler = (tableName) => {
     return async (req, res) => {
@@ -61,6 +58,17 @@ const logHistoryRouteHandler = async (req, res) => {
         res.status(500).json({ error: 'Internal server error' });
     }
 };
+const dataFromIP = async (req, res) => {
+    try {
+        const ip = req.ip;
+        const outputData = await (0, workerDataFuncs_1.workerData)(ip);
+        res.json(outputData);
+    }
+    catch (error) {
+        console.error('Error:', error);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+};
 const routes = [
     { path: '/suppliers', tableName: 'Supplies' },
     { path: '/products', tableName: 'Products' },
@@ -68,12 +76,13 @@ const routes = [
     { path: '/employees', tableName: 'Employees' },
     { path: '/customers', tableName: 'Customers' }
 ];
-// initDatabase();
+(0, db_1.initDatabase)();
 routes.forEach(({ path, tableName }) => {
     app.get(path, createRouteHandler(tableName));
 });
 app.get('/responseLogsStats', logStatsRouteHandler);
 app.get('/responseLogsHistory', logHistoryRouteHandler);
+app.get('/workerData', dataFromIP);
 app.listen(PORT, () => {
     console.log(`Server is running on port ${PORT}`);
 });

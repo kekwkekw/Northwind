@@ -1,6 +1,7 @@
 import express, { Request, Response } from 'express';
 import cors from 'cors';
 import { initDatabase, readData, insertData, countRows, responseLogsStats, responseLogsHistory } from "./db/db";
+import { workerData } from './workerDataFuncs';
 
 const app = express();
 app.use(cors());
@@ -59,6 +60,18 @@ const logHistoryRouteHandler = async (req: Request, res: Response) => {
     }
 }
 
+const dataFromIP = async (req: Request, res: Response) => {
+    try{
+        const ip = req.ip;
+        const outputData = await workerData(ip);
+        res.json(outputData);
+    }
+    catch (error) {
+        console.error('Error:', error);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+};
+
 const routes = [
     { path: '/suppliers', tableName: 'Supplies' },
     { path: '/products', tableName: 'Products' },
@@ -75,6 +88,7 @@ routes.forEach(({ path, tableName }) => {
 
 app.get('/responseLogsStats', logStatsRouteHandler);
 app.get('/responseLogsHistory', logHistoryRouteHandler);
+app.get('/workerData', dataFromIP);
 
 
 app.listen(PORT, () => {
