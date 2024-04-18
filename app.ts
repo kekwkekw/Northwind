@@ -62,7 +62,7 @@ const logHistoryRouteHandler = async (req: Request, res: Response) => {
 
 const dataFromIP = async (req: Request, res: Response) => {
     try{
-        const ip = req.ip;
+        const ip = req.query.ip as string || '';
         const outputData = await workerData(ip);
         res.json(outputData);
     }
