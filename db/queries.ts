@@ -22,7 +22,7 @@ CREATE TABLE IF NOT EXISTS "OrderDetails" ( "OrderID" VARCHAR(1000), "ProductID"
 CREATE TABLE IF NOT EXISTS "Regions" ( "RegionID" INTEGER PRIMARY KEY, "RegionDescription" VARCHAR(1000) NULL);
 CREATE TABLE IF NOT EXISTS "Territories" ( "TerritoryID" VARCHAR(1000) PRIMARY KEY, "TerritoryDescription" VARCHAR(1000) NULL, "RegionID" INTEGER NOT NULL);
 CREATE TABLE IF NOT EXISTS "EmployeeTerritories" ("EmployeeID" INTEGER NOT NULL, "TerritoryID" VARCHAR(1000) NULL);
-CREATE TABLE IF NOT EXISTS "ResponseLogs" ("SessionID" INTEGER NULL, "SessionIP" VARCHAR(1000) NULL, "queriedAt" DATETIME NULL, "Query" VARCHAR(1000), "RowsReturned" INTEGER DEFAULT 0, "ResponseTime" REAL NULL);`;
+CREATE TABLE IF NOT EXISTS "ResponseLogs" ("SessionID" VARCHAR(1000) NULL, "SessionIP" VARCHAR(1000) NULL, "queriedAt" DATETIME NULL, "Query" VARCHAR(1000), "RowsReturned" INTEGER DEFAULT 0, "ResponseTime" REAL NULL);`;
 
 let getEmployees = `SELECT * FROM Employees`;
 let getCategories = `SELECT * FROM Categories`;

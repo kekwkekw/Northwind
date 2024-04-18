@@ -18,14 +18,16 @@ const createRouteHandler = (tableName) => {
             const offset = parseInt(req.query.offset) || 0;
             const whereKey = req.query.whereKey || '';
             const whereLike = req.query.whereLike || '';
+            const sessionID = req.headers['session-id'] || '1';
             const outputData = await (0, db_1.readData)(tableName, limit, offset, whereKey, whereLike);
+            (0, db_1.insertData)('ResponseLogs', { SessionIP: req.ip, SessionID: sessionID, queriedAt: new Date(), Query: outputData['query'], RowsReturned: outputData['result'].length, ResponseTime: Date.now() - start });
             let count = await (0, db_1.countRows)(tableName);
+            (0, db_1.insertData)('ResponseLogs', { SessionIP: req.ip, SessionID: sessionID, queriedAt: new Date(), Query: `SELECT COUNT(1) AS total FROM ${tableName}`, RowsReturned: count, ResponseTime: Date.now() - start });
             let output = {
                 count: count,
                 data: outputData['result']
             };
             console.log('Request with parameters:', `${tableName}, ${limit}, ${offset}, ${whereKey}, ${whereLike}`);
-            (0, db_1.insertData)('ResponseLogs', { SessionIP: req.ip, SessionID: 1, queriedAt: new Date(), Query: outputData['query'], RowsReturned: outputData['result'].length, ResponseTime: Date.now() - start });
             res.json(output);
         }
         catch (error) {
@@ -34,24 +36,13 @@ const createRouteHandler = (tableName) => {
         }
     };
 };
-const logStatsRouteHandler = async (req, res) => {
+const logRouteHandler = async (req, res) => {
     try {
-        const SessionID = parseInt(req.query.SessionID) || 1;
-        const outputData = await (0, db_1.responseLogsStats)(SessionID);
-        console.log('Request with parameters:', `${SessionID}`);
-        res.json(outputData);
-    }
-    catch (error) {
-        console.error('Error:', error);
-        res.status(500).json({ error: 'Internal server error' });
-    }
-};
-const logHistoryRouteHandler = async (req, res) => {
-    try {
-        const SessionID = parseInt(req.query.SessionID) || 1;
-        const outputData = await (0, db_1.responseLogsHistory)(SessionID);
-        console.log('Request with parameters:', `${SessionID}`);
-        res.json(outputData);
+        const sessionID = req.headers['session-id'] || '1';
+        console.log(`Logs request from ${req.ip} with sessionID ${sessionID}`);
+        const stats = await (0, db_1.responseLogsStats)(sessionID);
+        const history = await (0, db_1.responseLogsHistory)(sessionID);
+        res.json({ stats: stats, history: history });
     }
     catch (error) {
         console.error('Error:', error);
@@ -60,7 +51,7 @@ const logHistoryRouteHandler = async (req, res) => {
 };
 const dataFromIP = async (req, res) => {
     try {
-        const ip = req.ip;
+        const ip = req.query.ip || '';
         const outputData = await (0, workerDataFuncs_1.workerData)(ip);
         res.json(outputData);
     }
@@ -80,8 +71,7 @@ const routes = [
 routes.forEach(({ path, tableName }) => {
     app.get(path, createRouteHandler(tableName));
 });
-app.get('/responseLogsStats', logStatsRouteHandler);
-app.get('/responseLogsHistory', logHistoryRouteHandler);
+app.get('/responseLogs', logRouteHandler);
 app.get('/workerData', dataFromIP);
 app.listen(PORT, () => {
     console.log(`Server is running on port ${PORT}`);

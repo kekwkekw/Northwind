@@ -129,7 +129,7 @@ const initDatabase = () => {
     insertDataFromFile('EmployeeTerritories', 'EmployeeTerritories.csv');
 };
 
-const responseLogsStats = (SessionID: number): Promise<{ queryCount: number, resultCount: number, selectCount: number, selectWhereCount: number, selectLeftJoinCount: number, queryHistory: string[] }> => {
+const responseLogsStats = (SessionID: string): Promise<{ queryCount: number, resultCount: number, selectCount: number, selectWhereCount: number, selectLeftJoinCount: number, queryHistory: string[] }> => {
     return new Promise((resolve, reject) => {
         db.get(logQueryStats, [SessionID], (err: Error | null, row: any) => {
             if (err) {
@@ -149,7 +149,7 @@ const responseLogsStats = (SessionID: number): Promise<{ queryCount: number, res
     });
 }
 
-const responseLogsHistory = (SessionID: number): Promise<{ queriedAt: string, Query: string, ResponseTime: number }[]> => {
+const responseLogsHistory = (SessionID: string): Promise<{ queriedAt: string, Query: string, ResponseTime: number }[]> => {
     return new Promise((resolve, reject) => {
         db.all(logQueryHistory, [SessionID], (err: Error | null, rows: any[] = []) => {
             if (err) {
