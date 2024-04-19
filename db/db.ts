@@ -9,6 +9,22 @@ const projectFolder = __dirname;
 const dbFilePath = path.join(projectFolder, 'northwind.db');
 const db = new Database(dbFilePath);
 
+function routeToID(routeName: string): string {
+    const routeMap: Record<string, string> = {
+        'suppliers': 'supplierID',
+        'products': 'productID',
+        'orders': 'orderID',
+        'employees': 'employeeID',
+        'customers': 'customerID'
+    };
+
+    if (routeName in routeMap) {
+        return routeMap[routeName];
+    } else {
+        return routeName;
+    }
+}
+
 const createTables = () => {
     console.log('Creating tables...');
     db.exec(initQuery, (err: Error | null) => {
@@ -43,12 +59,16 @@ const clearData = (tableName: string) => {
     });
 }
 
-const readData = (tableName: string, limit: number = Infinity, offset: number = 0, whereKey: string = '', whereLike: string = ''): Promise<{ query: string, result: any[] }> => {
+const readData = (tableName: string, limit: number = Infinity, offset: number = 0, whereKey: string = '', whereLike: string = '', strictSearch: number = 0): Promise<{ query: string, result: any[] }> => {
     return new Promise((resolve, reject) => {
         let query = getQueries.hasOwnProperty(tableName) ? getQueries[tableName] : `SELECT * FROM ${tableName}`;
 
         if (whereKey && whereLike) {
-            query += ` WHERE ${whereKey} LIKE '%${whereLike}%'`;
+            if (strictSearch) {
+                query += ` WHERE ${whereKey} = '${whereLike}'`;
+            } else {
+                query += ` WHERE ${whereKey} LIKE '%${whereLike}%'`;
+            }
         }
 
         if (limit !== Infinity) {
@@ -164,4 +184,4 @@ const responseLogsHistory = (SessionID: string): Promise<{ queriedAt: string, Qu
 
 
 
-export { initDatabase, readData, clearData, insertData, countRows, responseLogsStats, responseLogsHistory };
+export { initDatabase, readData, clearData, insertData, countRows, responseLogsStats, responseLogsHistory, routeToID };

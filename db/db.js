@@ -26,7 +26,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.responseLogsHistory = exports.responseLogsStats = exports.countRows = exports.insertData = exports.clearData = exports.readData = exports.initDatabase = void 0;
+exports.routeToID = exports.responseLogsHistory = exports.responseLogsStats = exports.countRows = exports.insertData = exports.clearData = exports.readData = exports.initDatabase = void 0;
 const fs = __importStar(require("fs"));
 const path = __importStar(require("path"));
 const csv_parser_1 = __importDefault(require("csv-parser"));
@@ -36,6 +36,22 @@ const rawDataFolder = './raw_data';
 const projectFolder = __dirname;
 const dbFilePath = path.join(projectFolder, 'northwind.db');
 const db = new sqlite3_1.Database(dbFilePath);
+function routeToID(routeName) {
+    const routeMap = {
+        'suppliers': 'supplierID',
+        'products': 'productID',
+        'orders': 'orderID',
+        'employees': 'employeeID',
+        'customers': 'customerID'
+    };
+    if (routeName in routeMap) {
+        return routeMap[routeName];
+    }
+    else {
+        return routeName;
+    }
+}
+exports.routeToID = routeToID;
 const createTables = () => {
     console.log('Creating tables...');
     db.exec(queries_1.initQuery, (err) => {
@@ -70,11 +86,16 @@ const clearData = (tableName) => {
     });
 };
 exports.clearData = clearData;
-const readData = (tableName, limit = Infinity, offset = 0, whereKey = '', whereLike = '') => {
+const readData = (tableName, limit = Infinity, offset = 0, whereKey = '', whereLike = '', strictSearch = 0) => {
     return new Promise((resolve, reject) => {
         let query = queries_1.getQueries.hasOwnProperty(tableName) ? queries_1.getQueries[tableName] : `SELECT * FROM ${tableName}`;
         if (whereKey && whereLike) {
-            query += ` WHERE ${whereKey} LIKE '%${whereLike}%'`;
+            if (strictSearch) {
+                query += ` WHERE ${whereKey} = '${whereLike}'`;
+            }
+            else {
+                query += ` WHERE ${whereKey} LIKE '%${whereLike}%'`;
+            }
         }
         if (limit !== Infinity) {
             query += ` LIMIT ${limit}`;

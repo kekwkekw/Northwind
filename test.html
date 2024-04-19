@@ -11,8 +11,8 @@
 
     <script>
         function testAPI() {
-            // fetch('https://northwind-iaum.onrender.com/suppliers')
-            fetch('http://localhost:3000/workerData')
+            fetch('https://northwind-iaum.onrender.com/workerData')
+            // fetch('http://localhost:3000/workerData')
                 .then(response => response.json())
                 .then(data => {
                     document.getElementById('output').innerText = JSON.stringify(data, null, 2);
