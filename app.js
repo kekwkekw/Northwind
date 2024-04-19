@@ -20,7 +20,15 @@ const createRouteHandler = (tableName) => {
             const sessionID = req.headers['session-id'] || '1';
             const route = req.path.split('/').pop();
             const routeID = (0, db_1.routeToID)(route);
-            const outputData = await (0, db_1.readData)(tableName, limit, offset, routeID, id, 1);
+            const whereKey = req.query.whereKey || '';
+            const whereLike = req.query.whereLike || '';
+            let outputData;
+            if (id) {
+                outputData = await (0, db_1.readData)(tableName, limit, offset, routeID, id, 1);
+            }
+            else {
+                outputData = await (0, db_1.readData)(tableName, limit, offset, whereKey, whereLike, 0);
+            }
             (0, db_1.insertData)('ResponseLogs', { SessionIP: req.ip, SessionID: sessionID, queriedAt: new Date(), Query: outputData['query'], RowsReturned: outputData['result'].length, ResponseTime: Date.now() - start });
             let count = await (0, db_1.countRows)(tableName);
             (0, db_1.insertData)('ResponseLogs', { SessionIP: req.ip, SessionID: sessionID, queriedAt: new Date(), Query: `SELECT COUNT(1) AS total FROM ${tableName}`, RowsReturned: count, ResponseTime: Date.now() - start });
@@ -29,32 +37,6 @@ const createRouteHandler = (tableName) => {
                 data: outputData['result']
             };
             console.log('Request with parameters:', `${tableName}, ${limit}, ${offset}, ${id}`);
-            res.json(output);
-        }
-        catch (error) {
-            console.error('Error:', error);
-            res.status(500).json({ error: 'Internal server error' });
-        }
-    };
-};
-const createRouteHandlerSearch = (tableName) => {
-    return async (req, res) => {
-        try {
-            const start = Date.now();
-            const limit = parseInt(req.query.limit) || Infinity;
-            const offset = parseInt(req.query.offset) || 0;
-            const whereKey = req.query.whereKey || '';
-            const whereLike = req.query.whereLike || '';
-            const sessionID = req.headers['session-id'] || '1';
-            const outputData = await (0, db_1.readData)(tableName, limit, offset, whereKey, whereLike, 0);
-            (0, db_1.insertData)('ResponseLogs', { SessionIP: req.ip, SessionID: sessionID, queriedAt: new Date(), Query: outputData['query'], RowsReturned: outputData['result'].length, ResponseTime: Date.now() - start });
-            let count = await (0, db_1.countRows)(tableName);
-            (0, db_1.insertData)('ResponseLogs', { SessionIP: req.ip, SessionID: sessionID, queriedAt: new Date(), Query: `SELECT COUNT(1) AS total FROM ${tableName}`, RowsReturned: count, ResponseTime: Date.now() - start });
-            let output = {
-                count: count,
-                data: outputData['result']
-            };
-            console.log('Request with parameters:', `${tableName}, ${limit}, ${offset}, ${whereKey}, ${whereLike}`);
             res.json(output);
         }
         catch (error) {
@@ -97,7 +79,6 @@ const routes = [
 (0, db_1.initDatabase)();
 routes.forEach(({ path, tableName }) => {
     app.get(path, createRouteHandler(tableName));
-    app.get(`${path}/search`, createRouteHandlerSearch(tableName));
 });
 app.get('/responseLogs', logRouteHandler);
 app.get('/workerData', dataFromIP);
