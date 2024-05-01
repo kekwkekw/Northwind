@@ -28,7 +28,6 @@ const fillOptionsForAirportApi = (langtitute: number, longitude: number) => {
     return options;
 }
 
-
 const findAirport = (latitude: number, longitude: number): Promise<string> => {
     return new Promise((resolve, reject) => {
         const optionsForAirportApi = fillOptionsForAirportApi(latitude, longitude);
@@ -41,7 +40,7 @@ const findAirport = (latitude: number, longitude: number): Promise<string> => {
     });
 };
 
-const workerData = (ip: string | undefined): Promise<{countryCode: string, iata: string}> => {
+const getWorkerData = (ip: string | undefined): Promise<{countryCode: string, iata: string}> => {
     return new Promise((resolve, reject) => {
         findInfoByIp(ip)
             .then(ipData => {
@@ -64,5 +63,30 @@ const workerData = (ip: string | undefined): Promise<{countryCode: string, iata:
     });
 }
 
+function dictToQuery(query: Record<string, any>): string {
+    let sql = query.sql;
+    let params = query.params;
+    for (let i = 0; i < params.length; i++) {
+        sql = sql.replace('?', params[i]);
+    }
+    return sql;
+}
 
-export { workerData };
+function routeToID(routeName: string): string {
+    const routeMap: Record<string, string> = {
+        'suppliers': 'supplierID',
+        'products': 'productID',
+        'orders': 'orderID',
+        'employees': 'employeeID',
+        'customers': 'customerID'
+    };
+
+    if (routeName in routeMap) {
+        return routeMap[routeName];
+    } else {
+        return routeName;
+    }
+}
+
+
+export { getWorkerData, routeToID, dictToQuery};
